@@ -28,6 +28,12 @@ export default function TopNav() {
         >
           Import Tasks
         </Link>
+        <Link
+          href="/ai"
+          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+        >
+          AI Assistant
+        </Link>
       </div>
     </nav>
   );
