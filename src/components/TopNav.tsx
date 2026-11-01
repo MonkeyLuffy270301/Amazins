@@ -15,6 +15,16 @@ type Notification = {
   created_at: string;
 };
 
+const NAV_LINKS: [string, string][] = [
+  ["Dashboard", "/dashboard"],
+  ["Calendar", "/calendar"],
+  ["Groups", "/groups"],
+  ["Messages", "/messages"],
+  ["Import Tasks", "/import"],
+  ["AI Assistant", "/ai"],
+  ["Settings", "/settings"],
+];
+
 function timeAgo(dateString: string) {
   const diff = Date.now() - new Date(dateString).getTime();
   const mins = Math.floor(diff / 60000);
@@ -31,6 +41,7 @@ export default function TopNav() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,57 +116,33 @@ export default function TopNav() {
   };
 
   return (
-    <nav className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav className="relative border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mx-auto flex max-w-6xl items-center gap-6">
         <Link
           href="/dashboard"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50 md:hidden"
         >
-          Dashboard
-        </Link>
-        <Link
-          href="/calendar"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          Calendar
-        </Link>
-        <Link
-          href="/groups"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          Groups
-        </Link>
-        <Link
-          href="/messages"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          Messages
-        </Link>
-        <Link
-          href="/import"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          Import Tasks
-        </Link>
-        <Link
-          href="/ai"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          AI Assistant
-        </Link>
-        <Link
-          href="/settings"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-        >
-          Settings
+          WorkFlow
         </Link>
 
-        <div ref={containerRef} className="relative ml-auto">
+        <div className="hidden items-center gap-6 md:flex">
+          {NAV_LINKS.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="relative rounded-md p-1 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            aria-label="Notifications"
+            onClick={() => setMenuOpen((o) => !o)}
+            className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 md:hidden"
+            aria-label="Menu"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -168,66 +155,107 @@ export default function TopNav() {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
           </button>
 
-          {open && (
-            <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                  Notifications
+          <div ref={containerRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              className="relative rounded-md p-1 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              aria-label="Notifications"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
-              </div>
-
-              {notifications.length === 0 ? (
-                <p className="py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  No notifications.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {notifications.map((n) => (
-                    <li key={n.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleNotificationClick(n)}
-                        className="w-full rounded-lg border border-zinc-100 px-3 py-2 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
-                      >
-                        <div className="text-sm text-zinc-900 dark:text-zinc-50">
-                          {n.content || n.message || "Notification"}
-                        </div>
-                        <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                          {timeAgo(n.created_at)}
-                          {!n.is_read && (
-                            <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500 align-middle" />
-                          )}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
               )}
+            </button>
 
-              <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={handleMarkAllRead}
-                  disabled={loading}
-                  className="w-full rounded-md px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                >
-                  {loading ? "Working..." : "Mark all as read"}
-                </button>
+            {open && (
+              <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                    Notifications
+                  </span>
+                </div>
+
+                {notifications.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    No notifications.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {notifications.map((n) => (
+                      <li key={n.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleNotificationClick(n)}
+                          className="w-full rounded-lg border border-zinc-100 px-3 py-2 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                        >
+                          <div className="text-sm text-zinc-900 dark:text-zinc-50">
+                            {n.content || n.message || "Notification"}
+                          </div>
+                          <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                            {timeAgo(n.created_at)}
+                            {!n.is_read && (
+                              <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500 align-middle" />
+                            )}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    disabled={loading}
+                    className="w-full rounded-md px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    {loading ? "Working..." : "Mark all as read"}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {menuOpen && (
+        <div className="absolute left-0 right-0 top-full z-40 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900 md:hidden">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2">
+            {NAV_LINKS.map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                className="rounded-md px-2 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
