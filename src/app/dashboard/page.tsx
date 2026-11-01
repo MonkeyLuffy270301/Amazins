@@ -38,10 +38,14 @@ export default async function Dashboard() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const displayName =
-    (user.user_metadata?.full_name as string | undefined)?.trim() ||
-    user.email ||
-    "there";
+    profile?.full_name?.trim() || user.email || "there";
 
   const { data: tasks } = await supabase
     .from("tasks")

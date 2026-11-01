@@ -143,6 +143,12 @@ export default function TopNav() {
         >
           AI Assistant
         </Link>
+        <Link
+          href="/settings"
+          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+        >
+          Settings
+        </Link>
 
         <div ref={containerRef} className="relative ml-auto">
           <button
