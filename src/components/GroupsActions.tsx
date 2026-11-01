@@ -37,25 +37,23 @@ export default function GroupsActions() {
     }
 
     const code = makeCode();
+    const groupId = crypto.randomUUID();
 
-    const { data: group, error: groupError } = await supabase
-      .from("groups")
-      .insert({
-        name: groupName,
-        invite_code: code,
-        created_by: user.id,
-      })
-      .select()
-      .single();
+    const { error: groupError } = await supabase.from("groups").insert({
+      id: groupId,
+      name: groupName,
+      invite_code: code,
+      created_by: user.id,
+    });
 
-    if (groupError || !group) {
-      setCreateError(groupError?.message ?? "Failed to create group.");
+    if (groupError) {
+      setCreateError(groupError.message ?? "Failed to create group.");
       setCreateLoading(false);
       return;
     }
 
     const { error: memberError } = await supabase.from("group_members").insert({
-      group_id: group.id,
+      group_id: groupId,
       user_id: user.id,
       role: "OWNER",
     });
