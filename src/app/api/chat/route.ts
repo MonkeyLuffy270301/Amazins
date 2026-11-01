@@ -41,6 +41,7 @@ export async function POST(request: Request) {
   const systemPrompt =
     "You are a helpful AI assistant for the WorkFlow app. " +
     "Answer questions about the user's schedule and tasks based only on the provided data. " +
+    "You can create new tasks using the create_task tool when the user asks. " +
     "Be concise and friendly. " +
     "User's tasks (JSON): " +
     JSON.stringify(tasks);
@@ -54,6 +55,25 @@ export async function POST(request: Request) {
     const completion = await openai.chat.completions.create({
       model: "openai/gpt-oss-20b",
       max_tokens: 256,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "create_task",
+            description: "Create a new task for the user.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Task title" },
+                date: { type: "string", description: "Task date (YYYY-MM-DD)" },
+                start_time: { type: "string", description: "Start time (HH:MM)" },
+              },
+              required: ["title", "date", "start_time"],
+            },
+          },
+        },
+      ],
+      tool_choice: "auto",
       messages: [
         { role: "system", content: systemPrompt },
         ...(body.history ?? []).map((m) => ({
@@ -64,7 +84,24 @@ export async function POST(request: Request) {
       ],
     });
 
-    const reply = completion.choices[0]?.message?.content ?? "No response from model.";
+    const choice = completion.choices[0]?.message;
+    if (choice?.tool_calls && choice.tool_calls.length > 0) {
+      return NextResponse.json({
+        tool_calls: choice.tool_calls.map((tc) => {
+          const fn = (tc as { function?: { name: string; arguments: string } }).function;
+          return {
+            id: tc.id,
+            type: tc.type,
+            function: {
+              name: fn?.name ?? "",
+              arguments: fn?.arguments ?? "{}",
+            },
+          };
+        }),
+      });
+    }
+
+    const reply = choice?.content ?? "No response from model.";
 
     return NextResponse.json({ response: reply });
   } catch (err) {
