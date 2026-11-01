@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
@@ -52,19 +53,21 @@ export default async function GroupsPage() {
           ) : (
             <ul className="space-y-2">
               {groups.map((m) => (
-                <li
-                  key={m.group_id}
-                  className="rounded-lg border border-zinc-100 px-3 py-2 dark:border-zinc-800"
-                >
-                  <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                    {m.groups?.name}
-                  </div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Role: {m.role ?? "MEMBER"}
-                    {m.groups?.invite_code
-                      ? ` · Invite code: ${m.groups.invite_code}`
-                      : null}
-                  </div>
+                <li key={m.group_id}>
+                  <Link
+                    href={`/groups/${m.group_id}`}
+                    className="block rounded-lg border border-zinc-100 px-3 py-2 transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                  >
+                    <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                      {m.groups?.name}
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Role: {m.role ?? "MEMBER"}
+                      {m.groups?.invite_code
+                        ? ` · Invite code: ${m.groups.invite_code}`
+                        : null}
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
