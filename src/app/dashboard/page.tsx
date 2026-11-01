@@ -1,9 +1,31 @@
-export default function Dashboard() {
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+
+export const instant = false;
+
+export default async function Dashboard() {
+  await connection();
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    redirect("/login");
+  }
+
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    user.email ||
+    "there";
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-black">
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          WorkFlow Dashboard
+          Welcome back, {displayName}
         </h1>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
