@@ -126,6 +126,12 @@ export default function TopNav() {
           Groups
         </Link>
         <Link
+          href="/messages"
+          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+        >
+          Messages
+        </Link>
+        <Link
           href="/import"
           className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
         >
