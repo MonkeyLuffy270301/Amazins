@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import RequestCoverageButton from "@/components/RequestCoverageButton";
 
 export const instant = false;
 
@@ -67,15 +68,18 @@ export default async function CalendarPage() {
                     to {task.end_time ?? "—"}
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                    {task.title}
-                  </div>
-                  {task.location ? (
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Location: {task.location}
+                <div className="flex flex-1 items-start justify-between gap-2">
+                  <div>
+                    <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                      {task.title}
                     </div>
-                  ) : null}
+                    {task.location ? (
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Location: {task.location}
+                      </div>
+                    ) : null}
+                  </div>
+                  <RequestCoverageButton taskId={task.id} />
                 </div>
               </li>
             ))}
