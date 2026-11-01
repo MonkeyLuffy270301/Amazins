@@ -16,6 +16,12 @@ export default function TopNav() {
         >
           Calendar
         </Link>
+        <Link
+          href="/groups"
+          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+        >
+          Groups
+        </Link>
       </div>
     </nav>
   );
