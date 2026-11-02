@@ -1,28 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 type Profile = {
   full_name: string | null;
-  employee_id: string | null;
   phone: string | null;
-  availability_status: string | null;
+  region: string | null;
+  avatar_url: string | null;
 };
 
-const STATUS_OPTIONS = ["AVAILABLE", "BUSY", "OFF_DUTY"];
-
 export default function SettingsForm() {
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [tab, setTab] = useState<"account" | "preferences" | "themes">("account");
+
   const [fullName, setFullName] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
   const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState("AVAILABLE");
+  const [region, setRegion] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -32,20 +35,19 @@ export default function SettingsForm() {
       } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
-      setEmail(user.email ?? "");
 
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, employee_id, phone, availability_status")
+        .select("full_name, phone, region, avatar_url")
         .eq("id", user.id)
         .single();
 
       if (data) {
         const p = data as Profile;
         setFullName(p.full_name ?? "");
-        setEmployeeId(p.employee_id ?? "");
         setPhone(p.phone ?? "");
-        setStatus(p.availability_status ?? "AVAILABLE");
+        setRegion(p.region ?? "");
+        setAvatarUrl(p.avatar_url ?? "");
       }
       setLoading(false);
     };
@@ -64,9 +66,9 @@ export default function SettingsForm() {
       .from("profiles")
       .update({
         full_name: fullName,
-        employee_id: employeeId,
         phone,
-        availability_status: status,
+        region,
+        avatar_url: avatarUrl,
       })
       .eq("id", userId);
 
@@ -78,98 +80,184 @@ export default function SettingsForm() {
     setSuccess("Changes saved successfully.");
   };
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("delete_user_account");
+    if (error) {
+      setDeleting(false);
+      setError(error.message);
+      setDeleteOpen(false);
+      return;
+    }
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   if (loading) {
     return <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>;
   }
 
   return (
-    <form
-      onSubmit={handleSave}
-      className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Email
-        </label>
-        <input
-          type="email"
-          value={email}
-          readOnly
-          className="w-full rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Full Name
-        </label>
-        <input
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Employee ID
-        </label>
-        <input
-          type="text"
-          value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Phone
-        </label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Availability Status
-        </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setTab("account")}
+          className={`rounded-md px-3 py-1 text-sm font-medium ${
+            tab === "account"
+              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              : "text-zinc-600 dark:text-zinc-400"
+          }`}
         >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          Account
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("preferences")}
+          className={`rounded-md px-3 py-1 text-sm font-medium ${
+            tab === "preferences"
+              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              : "text-zinc-600 dark:text-zinc-400"
+          }`}
+        >
+          Preferences
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("themes")}
+          className={`rounded-md px-3 py-1 text-sm font-medium ${
+            tab === "themes"
+              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              : "text-zinc-600 dark:text-zinc-400"
+          }`}
+        >
+          Themes
+        </button>
       </div>
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
-          {error}
-        </p>
+      {tab === "account" && (
+        <form onSubmit={handleSave} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Full Name
+            </label>
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Phone
+            </label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Region
+            </label>
+            <input
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Avatar URL
+            </label>
+            <input
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          {error && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/40 dark:text-green-400">
+              {success}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+            >
+              Log Out
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Delete Account
+            </button>
+          </div>
+        </form>
       )}
-      {success && (
-        <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/40 dark:text-green-400">
-          {success}
+
+      {tab === "preferences" && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          UI Preferences coming soon
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-      >
-        {saving ? "Saving..." : "Save Changes"}
-      </button>
-    </form>
+      {tab === "themes" && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Themes coming soon
+        </p>
+      )}
+
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-sm text-zinc-900 dark:text-zinc-50">
+              Are you sure? This will permanently delete all your data.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(false)}
+                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteAccount}
+                className="rounded-md bg-red-600 px-3 py-1 text-sm text-white"
+              >
+                {deleting ? "..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
