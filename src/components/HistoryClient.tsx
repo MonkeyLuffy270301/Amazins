@@ -62,6 +62,7 @@ export default function HistoryClient() {
           .select("id, title, date, status")
           .eq("user_id", user.id)
           .is("deleted_at", null)
+          .eq("status", "COMPLETED")
           .gte("date", startStr)
           .lte("date", endStr)
           .order("date", { ascending: true });
@@ -171,6 +172,22 @@ export default function HistoryClient() {
                   <div className="text-xs text-zinc-500 dark:text-zinc-400">
                     {t.date ?? ""}
                   </div>
+                  {tab === "tasks" && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const supabase = createClient();
+                        await supabase
+                          .from("tasks")
+                          .update({ status: "SCHEDULED" })
+                          .eq("id", t.id);
+                        setTasks((prev) => prev.filter((x) => x.id !== t.id));
+                      }}
+                      className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                    >
+                      Mark as Pending
+                    </button>
+                  )}
                   {tab === "deleted" && (
                     <button
                       type="button"
