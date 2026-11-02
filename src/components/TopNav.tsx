@@ -13,6 +13,7 @@ const LEFT_LINKS = [
   ["Import", "/import"],
   ["Messages", "/messages"],
   ["AI Assistant", "/ai"],
+  ["History", "/history"],
 ];
 
 const PROFILE_LINKS = [["Settings", "/settings"]];
