@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import RequestCoverageModal from "@/components/RequestCoverageModal";
 
 type Message = {
   id: string;
@@ -25,6 +26,15 @@ export default function GroupChat({
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestTask, setRequestTask] = useState<{
+    id: string;
+    title: string;
+    date: string | null;
+    location: string | null;
+  } | null>(null);
+  const [creatingRequest, setCreatingRequest] = useState(false);
 
   const fetchMessages = async () => {
     const supabase = createClient();
@@ -154,13 +164,65 @@ export default function GroupChat({
         onSubmit={handleSend}
         className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800"
       >
-        <button
-          type="button"
-          onClick={handleCreateRequest}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-        >
-          +
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          >
+            +
+          </button>
+          {menuOpen && (
+            <div className="absolute bottom-full left-0 mb-2 w-40 rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                onClick={() => {
+                  setMenuOpen(false);
+                  console.log("Upload Photo");
+                }}
+              >
+                Upload Photo
+              </button>
+              <button
+                type="button"
+                disabled={creatingRequest}
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  setCreatingRequest(true);
+                  const supabase = createClient();
+                  const {
+                    data: { user },
+                  } = await supabase.auth.getUser();
+                  if (!user) {
+                    setError("You must be logged in.");
+                    setCreatingRequest(false);
+                    return;
+                  }
+                  const taskId = crypto.randomUUID();
+                  await supabase.from("tasks").insert({
+                    id: taskId,
+                    user_id: user.id,
+                    title: "New Request",
+                    date: null,
+                    status: "pending",
+                  });
+                  setRequestTask({
+                    id: taskId,
+                    title: "New Request",
+                    date: null,
+                    location: null,
+                  });
+                  setRequestOpen(true);
+                  setCreatingRequest(false);
+                }}
+              >
+                {creatingRequest ? "..." : "Create Request"}
+              </button>
+            </div>
+          )}
+        </div>
         <input
           type="text"
           value={content}
@@ -180,6 +242,17 @@ export default function GroupChat({
         <p className="px-3 pb-3 text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
+      )}
+      {requestTask && (
+        <RequestCoverageModal
+          task={requestTask}
+          open={requestOpen}
+          onClose={() => {
+            setRequestOpen(false);
+            setRequestTask(null);
+          }}
+          targetGroupId={groupId}
+        />
       )}
     </div>
   );

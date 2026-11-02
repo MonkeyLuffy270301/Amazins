@@ -22,10 +22,12 @@ export default function RequestCoverageModal({
   task,
   open,
   onClose,
+  targetGroupId,
 }: {
   task: Task;
   open: boolean;
   onClose: () => void;
+  targetGroupId?: string;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
@@ -90,10 +92,14 @@ export default function RequestCoverageModal({
         });
       }
 
-      setDestinations(dests);
+      const filtered = targetGroupId
+        ? dests.filter((d) => d.kind === "group" && d.id === targetGroupId)
+        : dests;
+      setDestinations(filtered);
+      setSelected(filtered.map((d) => d.key));
     };
     loadDestinations();
-  }, [open]);
+  }, [open, targetGroupId]);
 
   if (!open) return null;
 

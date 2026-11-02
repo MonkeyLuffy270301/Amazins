@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import GroupChat from "@/components/GroupChat";
 import GroupChatTabs from "@/components/GroupChatTabs";
+import GroupInfoPanel from "@/components/GroupInfoPanel";
 
 type Member = {
   user_id: string;
@@ -53,7 +54,7 @@ export default async function GroupChatPage({
 
   const { data: membership } = await supabase
     .from("group_members")
-    .select("id")
+    .select("id, role")
     .eq("group_id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -70,10 +71,21 @@ export default async function GroupChatPage({
 
   const { data: memberRows } = await supabase
     .from("group_members")
-    .select("user_id")
+    .select("user_id, role")
     .eq("group_id", id);
 
-  const members = (memberRows ?? []) as Member[];
+  const memberIds = (memberRows ?? []).map((m: { user_id: string }) => m.user_id);
+  const { data: memberProfiles } = memberIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", memberIds)
+    : { data: [] as { id: string; full_name: string | null }[] };
+
+  const profileMap = new Map((memberProfiles ?? []).map((p) => [p.id, p.full_name]));
+
+  const members = (memberRows ?? []).map((m: { user_id: string; role: string | null }) => ({
+    user_id: m.user_id,
+    role: m.role,
+    name: profileMap.get(m.user_id) ?? null,
+  }));
 
   const { data: groupRequests } = await supabase
     .from("coverage_requests")
@@ -91,9 +103,15 @@ export default async function GroupChatPage({
             ← Back to Groups
           </Link>
         </div>
-        <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          {(group as Group).name}
-        </h1>
+        <div className="mb-4">
+          <GroupInfoPanel
+            groupId={id}
+            groupName={(group as Group).name}
+            currentUserId={user.id}
+            currentUserRole={membership?.role ?? null}
+            members={members as any}
+          />
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <aside className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
