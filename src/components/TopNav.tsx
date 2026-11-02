@@ -11,14 +11,11 @@ const LEFT_LINKS = [
   ["Calendar", "/calendar"],
   ["Groups", "/groups"],
   ["Import", "/import"],
+  ["Messages", "/messages"],
+  ["AI Assistant", "/ai"],
 ];
 
-const PROFILE_LINKS = [
-  ["Full Calendar", "/calendar"],
-  ["Full AI Window", "/ai"],
-  ["Messages", "/messages"],
-  ["Settings", "/settings"],
-];
+const PROFILE_LINKS = [["Settings", "/settings"]];
 
 type TaskResult = {
   id: string;
@@ -33,6 +30,8 @@ export default function TopNav() {
   const [results, setResults] = useState<TaskResult[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileEmail, setProfileEmail] = useState<string | null>(null);
+  const [joinedDate, setJoinedDate] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +65,23 @@ export default function TopNav() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      setProfileEmail(user.email ?? null);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("created_at")
+        .eq("id", user.id)
+        .single();
+      setJoinedDate(profile?.created_at ?? null);
+    };
+    loadProfile();
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -133,7 +149,18 @@ export default function TopNav() {
             <User size={18} />
           </button>
           {profileOpen && (
-            <div className="absolute right-0 z-50 mt-2 w-48 rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="absolute right-0 z-50 mt-2 w-56 rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  {profileEmail ?? "Unknown"}
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Joined:{" "}
+                  {joinedDate
+                    ? new Date(joinedDate).toLocaleDateString()
+                    : "—"}
+                </div>
+              </div>
               <ul className="py-1">
                 {PROFILE_LINKS.map(([label, href]) => (
                   <li key={href}>
@@ -142,13 +169,7 @@ export default function TopNav() {
                       onClick={() => setProfileOpen(false)}
                       className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
                     >
-                      {label === "Full AI Window" ? (
-                        <span className="flex items-center gap-2">
-                          <Bot size={16} /> {label}
-                        </span>
-                      ) : (
-                        label
-                      )}
+                      {label}
                     </Link>
                   </li>
                 ))}
