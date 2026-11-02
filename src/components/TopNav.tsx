@@ -137,9 +137,10 @@ export default function TopNav() {
   };
 
   return (
-    <nav className="bg-white px-4 py-3 dark:bg-zinc-900">
+    <nav className="glass-panel sticky top-0 z-50 px-4 py-3">
       <div className="mx-auto flex max-w-6xl items-center gap-4">
         <div className="flex items-center gap-4">
+          <span className="text-lg font-semibold text-white">AMAZINS</span>
           {LEFT_LINKS.map(([label, href]) => (
             <Link
               key={href}

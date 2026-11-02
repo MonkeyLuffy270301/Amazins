@@ -134,7 +134,7 @@ export default function GroupChat({
       : msg.user_id;
 
   return (
-    <div className="flex h-[60vh] flex-col rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex h-[60vh] flex-col glass-card">
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">

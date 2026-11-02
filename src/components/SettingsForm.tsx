@@ -129,7 +129,7 @@ export default function SettingsForm() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="glass-card space-y-4 p-5">
       <div className="flex gap-2">
         <button
           type="button"

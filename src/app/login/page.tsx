@@ -40,7 +40,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Log in to your WorkFlow account
+            Log in to your AMAZINS account
           </p>
         </div>
 

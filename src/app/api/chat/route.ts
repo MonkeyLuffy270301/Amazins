@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const tasks = await getMyTasks(supabase, user.id).catch(() => []);
 
   const systemPrompt =
-    "You are a helpful AI assistant for the WorkFlow app. " +
+    "You are a helpful AI assistant for the AMAZINS app. " +
     "Answer questions about the user's schedule and tasks based only on the provided data. " +
     "You can create new tasks using the create_task tool when the user asks. " +
     "Be concise and friendly. " +

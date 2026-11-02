@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AMAZINS",
-  description: "WorkFlow management by AMAZINS",
+  description: "AMAZINS management by AMAZINS",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-zinc-100 text-zinc-900 pb-16 md:pb-0 dark:bg-zinc-950 dark:text-zinc-100">
+      <body className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-black text-white antialiased">
   <div className="hidden md:block">
     <TopNav />
   </div>

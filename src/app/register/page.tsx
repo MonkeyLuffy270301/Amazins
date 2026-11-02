@@ -47,7 +47,7 @@ export default function RegisterPage() {
             Create your account
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Join WorkFlow to get started
+            Join AMAZINS to get started
           </p>
         </div>
 

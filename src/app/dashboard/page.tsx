@@ -97,7 +97,7 @@ export default async function Dashboard() {
         </h1>
 
         {/* Top section: Weekly calendar placeholder + 2 immediate items */}
-        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="rounded-lg border border-white/10 glass-card p-4">
           <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
             Weekly Calendar
           </h2>
@@ -107,7 +107,7 @@ export default async function Dashboard() {
         </section>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <section className="rounded-lg border border-white/10 glass-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
                 Immediate Tasks
@@ -165,7 +165,7 @@ export default async function Dashboard() {
             )}
           </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <section className="rounded-lg border border-white/10 glass-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
                 Immediate Requests
@@ -228,7 +228,7 @@ export default async function Dashboard() {
         <div className="flex flex-col gap-4 md:grid md:grid-cols-5">
           {/* Left column 40% */}
           <div className="space-y-4 md:col-span-2">
-            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <section className="rounded-lg border border-white/10 glass-card p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
                   Task List
@@ -248,7 +248,7 @@ export default async function Dashboard() {
               )}
             </section>
 
-            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <section className="rounded-lg border border-white/10 glass-card p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
                   Request Box
@@ -279,7 +279,7 @@ export default async function Dashboard() {
 
           {/* Right column 60% */}
           <div className="md:col-span-3">
-            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <section className="rounded-lg border border-white/10 glass-card p-4">
               <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
                 Interaction Panel
               </h2>

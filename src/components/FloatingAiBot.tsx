@@ -12,7 +12,7 @@ export default function FloatingAiBot() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="glass-panel fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full p-4 shadow-2xl"
         aria-label="AI Assistant"
       >
         <Bot size={20} />
