@@ -6,6 +6,7 @@ import CreateRequestModal from "@/components/CreateRequestModal";
 import RequestCoverageButton from "@/components/RequestCoverageButton";
 import AcceptCoverageButton from "@/components/AcceptCoverageButton";
 import TaskRow from "@/components/TaskRow";
+import DeclineRequestButton from "@/components/DeclineRequestButton";
 import InteractionPanel from "@/components/InteractionPanel";
 
 export const instant = false;
@@ -240,11 +241,25 @@ export default async function Dashboard() {
                   No tasks.
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {visibleTasks.slice(0, 5).map((task) => (
-                    <TaskRow key={task.id} task={task} />
-                  ))}
-                </ul>
+                <>
+                  <ul className="space-y-2">
+                    {visibleTasks.slice(0, 5).map((task) => (
+                      <TaskRow key={task.id} task={task} />
+                    ))}
+                  </ul>
+                  {visibleTasks.length > 5 && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm text-zinc-500 dark:text-zinc-400">
+                        Expand
+                      </summary>
+                      <ul className="mt-2 space-y-2">
+                        {visibleTasks.slice(5).map((task) => (
+                          <TaskRow key={task.id} task={task} />
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </>
               )}
             </section>
 
@@ -260,19 +275,47 @@ export default async function Dashboard() {
                   No open requests.
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {coverageRequests.map((req) => (
-                    <li
-                      key={req.id}
-                      className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
-                    >
-                      <div className="text-sm text-zinc-900 dark:text-zinc-50">
-                        {req.tasks?.title ?? "Unknown task"}
-                      </div>
-                      <AcceptCoverageButton requestId={req.id} />
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="space-y-2">
+                    {coverageRequests.slice(0, 3).map((req) => (
+                      <li
+                        key={req.id}
+                        className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                      >
+                        <div className="text-sm text-zinc-900 dark:text-zinc-50">
+                          {req.tasks?.title ?? "Unknown task"}
+                        </div>
+                        <div className="flex gap-2">
+                          <AcceptCoverageButton requestId={req.id} />
+                          <DeclineRequestButton requestId={req.id} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {coverageRequests.length > 3 && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm text-zinc-500 dark:text-zinc-400">
+                        Expand
+                      </summary>
+                      <ul className="mt-2 space-y-2">
+                        {coverageRequests.slice(3).map((req) => (
+                          <li
+                            key={req.id}
+                            className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                          >
+                            <div className="text-sm text-zinc-900 dark:text-zinc-50">
+                              {req.tasks?.title ?? "Unknown task"}
+                            </div>
+                            <div className="flex gap-2">
+                              <AcceptCoverageButton requestId={req.id} />
+                              <DeclineRequestButton requestId={req.id} />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </>
               )}
             </section>
           </div>
