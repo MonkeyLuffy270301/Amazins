@@ -4,260 +4,167 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Bot } from "lucide-react";
+import { Bot, Search, User } from "lucide-react";
 
-type Notification = {
-  id: string;
-  user_id: string;
-  content?: string | null;
-  message?: string | null;
-  link?: string | null;
-  is_read: boolean | null;
-  created_at: string;
-};
-
-const NAV_LINKS: [string, string][] = [
+const LEFT_LINKS = [
   ["Dashboard", "/dashboard"],
   ["Calendar", "/calendar"],
   ["Groups", "/groups"],
-  ["Messages", "/messages"],
-  ["Import Tasks", "/import"],
-  ["AI Assistant", "/ai"],
-  ["Settings", "/settings"],
-  ["History", "/history"],
+  ["Import", "/import"],
 ];
 
-function timeAgo(dateString: string) {
-  const diff = Date.now() - new Date(dateString).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? "" : "s"} ago`;
-}
+const PROFILE_LINKS = [
+  ["Full Calendar", "/calendar"],
+  ["Full AI Window", "/ai"],
+  ["Messages", "/messages"],
+  ["Settings", "/settings"],
+];
+
+type TaskResult = {
+  id: string;
+  title: string;
+  date: string | null;
+};
 
 export default function TopNav() {
   const router = useRouter();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [open, setOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const supabase = createClient();
-
-  const fetchNotifications = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setUnreadCount(0);
-      setNotifications([]);
-      return;
-    }
-
-    const [{ data: recent }, { count }] = await Promise.all([
-      supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(5),
-      supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false),
-    ]);
-
-    setNotifications((recent ?? []) as Notification[]);
-    setUnreadCount(count ?? 0);
-  };
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<TaskResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const fetchResults = async () => {
+      if (!search.trim()) {
+        setResults([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("tasks")
+        .select("id, title, date")
+        .ilike("title", `%${search.trim()}%`)
+        .limit(8);
+      setResults((data ?? []) as TaskResult[]);
+      setSearchOpen(true);
+    };
+    const t = setTimeout(fetchResults, 250);
+    return () => clearTimeout(t);
+  }, [search, supabase]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+    const close = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const handleMarkAllRead = async () => {
-    setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-    }
-    await fetchNotifications();
-    setLoading(false);
-  };
-
-  const handleNotificationClick = async (n: Notification) => {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
-    setOpen(false);
-    await fetchNotifications();
-    router.push(n.link || "/dashboard");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white px-4 py-3 dark:bg-zinc-900">
-      <div className="mx-auto flex max-w-6xl items-center gap-6">
-        <Link
-          href="/dashboard"
-          className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50 md:hidden"
-        >
-          AMAZINS
-        </Link>
-
-        <div className="hidden items-center gap-6 md:flex">
-          {NAV_LINKS.map(([label, href]) => (
+    <nav className="bg-white px-4 py-3 dark:bg-zinc-900">
+      <div className="mx-auto flex max-w-6xl items-center gap-4">
+        <div className="flex items-center gap-4">
+          {LEFT_LINKS.map(([label, href]) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+              className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
             >
-              {label === "AI Assistant" ? <Bot size={18} /> : label}
+              {label}
             </Link>
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div ref={searchRef} className="relative ml-auto flex-1 max-w-md">
+          <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-1 dark:border-zinc-700 dark:bg-zinc-800">
+            <Search size={16} className="text-zinc-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => search && setSearchOpen(true)}
+              placeholder="Search tasks, groups, people..."
+              className="w-full bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none dark:text-zinc-50"
+            />
+          </div>
+          {searchOpen && results.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <ul>
+                {results.map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      href="/dashboard"
+                      className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                      onClick={() => {
+                        setSearchOpen(false);
+                        setSearch("");
+                      }}
+                    >
+                      {r.title}
+                      {r.date ? (
+                        <span className="ml-2 text-xs text-zinc-500">{r.date}</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div ref={profileRef} className="relative">
           <button
             type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 md:hidden"
-            aria-label="Menu"
+            onClick={() => setProfileOpen((o) => !o)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
+            aria-label="Profile"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <User size={18} />
           </button>
-
-          <div ref={containerRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="relative rounded-md p-1 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              aria-label="Notifications"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {open && (
-              <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    Notifications
-                  </span>
-                </div>
-
-                {notifications.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    No notifications.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {notifications.map((n) => (
-                      <li key={n.id}>
-                        <button
-                          type="button"
-                          onClick={() => handleNotificationClick(n)}
-                          className="w-full rounded-lg border border-zinc-100 px-3 py-2 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
-                        >
-                          <div className="text-sm text-zinc-900 dark:text-zinc-50">
-                            {n.content || n.message || "Notification"}
-                          </div>
-                          <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                            {timeAgo(n.created_at)}
-                            {!n.is_read && (
-                              <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500 align-middle" />
-                            )}
-                          </div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+          {profileOpen && (
+            <div className="absolute right-0 z-50 mt-2 w-48 rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <ul className="py-1">
+                {PROFILE_LINKS.map(([label, href]) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      onClick={() => setProfileOpen(false)}
+                      className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                    >
+                      {label === "Full AI Window" ? (
+                        <span className="flex items-center gap-2">
+                          <Bot size={16} /> {label}
+                        </span>
+                      ) : (
+                        label
+                      )}
+                    </Link>
+                  </li>
+                ))}
+                <li>
                   <button
-                    type="button"
-                    onClick={handleMarkAllRead}
-                    disabled={loading}
-                    className="w-full rounded-md px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    onClick={handleLogout}
+                    className="block w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   >
-                    {loading ? "Working..." : "Mark all as read"}
+                    Log Out
                   </button>
-                </div>
-              </div>
-            )}
-          </div>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
-
-      {menuOpen && (
-        <div className="absolute left-0 right-0 top-full z-40 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900 md:hidden">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2">
-            {NAV_LINKS.map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
-                {label === "AI Assistant" ? <Bot size={18} /> : label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
