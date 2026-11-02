@@ -89,8 +89,10 @@ export default async function GroupChatPage({
 
   const { data: groupRequests } = await supabase
     .from("coverage_requests")
-    .select("id, task_id, status, requester_id, accepted_by, phone_requester, phone_owner, place, pickup_time, order_reference, links, image_urls, tasks(title, date, start_time)")
+    .select("id, task_id, status, requester_id, accepted_by, accepter_name, phone_requester, phone_owner, place, pickup_time, order_reference, links, image_urls, tasks(title, date, start_time)")
     .eq("group_id", id);
+
+  const requests = (groupRequests ?? []) as any[];
 
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-black">
@@ -143,7 +145,7 @@ export default async function GroupChatPage({
               initialMessages={(messages ?? []) as Message[]}
               currentUserId={user.id}
               currentUserEmail={user.email ?? null}
-              requests={(groupRequests ?? []) as any}
+              requests={requests as any}
             />
           </div>
         </div>

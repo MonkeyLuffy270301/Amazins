@@ -19,6 +19,7 @@ type Request = {
   image_urls?: string | null;
   requester_id: string;
   accepted_by?: string | null;
+  accepter_name?: string | null;
 };
 
 function isRequestExpired(r: Request) {
@@ -159,7 +160,7 @@ export default function GroupChatTabs({
 
                   {accepted && (
                     <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                      Accepted by {r.accepted_by ?? "someone"}
+                      Accepted by: {r.accepter_name ?? "someone"}
                     </div>
                   )}
                   {declined && (
