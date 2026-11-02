@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-export default function AcceptCoverageButton({ requestId }: { requestId: string }) {
+export default function AcceptCoverageButton({
+  requestId,
+  disabled = false,
+}: {
+  requestId: string;
+  disabled?: boolean;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -26,8 +32,7 @@ export default function AcceptCoverageButton({ requestId }: { requestId: string 
     <button
       type="button"
       onClick={handleClick}
-      disabled={loading}
-      className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white transition hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+      disabled={loading || disabled}      className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white transition hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
     >
       {loading ? "..." : "Accept"}
     </button>

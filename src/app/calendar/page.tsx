@@ -15,6 +15,14 @@ type Task = {
   status: string | null;
 };
 
+function isExpired(task: Task) {
+  if (!task.date) return false;
+  const start = task.start_time || "00:00";
+  const parsed = new Date(`${task.date}T${start.length === 5 ? start + ":00" : start}`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now() - 10 * 60 * 1000;
+}
+
 export default async function CalendarPage() {
   await connection();
   const supabase = await createClient();
@@ -60,7 +68,7 @@ export default async function CalendarPage() {
             {todayTasks.map((task) => (
               <li
                 key={task.id}
-                className="flex gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className={`flex gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 ${isExpired(task as any) ? "opacity-50 blur-sm" : ""}`}
               >
                 <div className="min-w-[110px] text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   <div>{task.start_time ?? "—"}</div>
@@ -72,6 +80,9 @@ export default async function CalendarPage() {
                   <div>
                     <div className="font-medium text-zinc-900 dark:text-zinc-50">
                       {task.title}
+                      {isExpired(task as any) && (
+                        <span className="ml-2 text-xs font-semibold text-red-500">EXPIRED</span>
+                      )}
                     </div>
                     {task.location ? (
                       <div className="text-xs text-zinc-500 dark:text-zinc-400">

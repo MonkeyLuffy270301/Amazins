@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import GroupChat from "@/components/GroupChat";
+import GroupChatTabs from "@/components/GroupChatTabs";
 
 type Member = {
   user_id: string;
@@ -74,6 +75,12 @@ export default async function GroupChatPage({
 
   const members = (memberRows ?? []) as Member[];
 
+  const { data: groupRequests } = await supabase
+    .from("coverage_requests")
+    .select("id, status, requested_by, requester_phone, owner_phone, links, image_urls, tasks(title, date, start_time)")
+    .eq("group_id", id)
+    .eq("status", "OPEN");
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-black">
       <div className="mx-auto max-w-5xl">
@@ -114,11 +121,12 @@ export default async function GroupChatPage({
           </aside>
 
           <div className="md:col-span-3">
-            <GroupChat
+            <GroupChatTabs
               groupId={id}
               initialMessages={(messages ?? []) as Message[]}
               currentUserId={user.id}
               currentUserEmail={user.email ?? null}
+              requests={(groupRequests ?? []) as any}
             />
           </div>
         </div>

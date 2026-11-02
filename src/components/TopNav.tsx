@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { Bot } from "lucide-react";
 
 type Notification = {
   id: string;
@@ -23,6 +24,7 @@ const NAV_LINKS: [string, string][] = [
   ["Import Tasks", "/import"],
   ["AI Assistant", "/ai"],
   ["Settings", "/settings"],
+  ["History", "/history"],
 ];
 
 function timeAgo(dateString: string) {
@@ -116,13 +118,13 @@ export default function TopNav() {
   };
 
   return (
-    <nav className="relative border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav className="sticky top-0 z-50 bg-white px-4 py-3 dark:bg-zinc-900">
       <div className="mx-auto flex max-w-6xl items-center gap-6">
         <Link
           href="/dashboard"
           className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50 md:hidden"
         >
-          WorkFlow
+          AMAZINS
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">
@@ -130,9 +132,9 @@ export default function TopNav() {
             <Link
               key={href}
               href={href}
-              className="text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+              className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-50"
             >
-              {label}
+              {label === "AI Assistant" ? <Bot size={18} /> : label}
             </Link>
           ))}
         </div>
@@ -248,9 +250,9 @@ export default function TopNav() {
                 key={href}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                className="rounded-md px-2 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
               >
-                {label}
+                {label === "AI Assistant" ? <Bot size={18} /> : label}
               </Link>
             ))}
           </div>

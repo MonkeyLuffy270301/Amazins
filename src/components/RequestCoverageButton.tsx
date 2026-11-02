@@ -47,11 +47,20 @@ export default function RequestCoverageButton({ taskId }: { taskId: string }) {
       return;
     }
 
+    const requesterPhone = window.prompt("Requester Phone:") ?? "";
+    const ownerPhone = window.prompt("Owner Phone:") ?? "";
+    const links = window.prompt("Links (comma separated):") ?? "";
+    const imageUrls = window.prompt("Image URLs (comma separated):") ?? "";
+
     const { error } = await supabase.from("coverage_requests").insert({
       task_id: taskId,
       group_id: groups[index].id,
       requested_by: user.id,
       status: "OPEN",
+      requester_phone: requesterPhone || null,
+      owner_phone: ownerPhone || null,
+      links: links || null,
+      image_urls: imageUrls || null,
     });
 
     setLoading(false);

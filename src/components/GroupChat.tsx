@@ -40,6 +40,59 @@ export default function GroupChat({
     fetchMessages();
   }, [groupId]);
 
+  const handleCreateRequest = async () => {
+    const title = window.prompt("Task title:")?.trim();
+    if (!title) return;
+    const date = window.prompt("Date (YYYY-MM-DD):")?.trim() ?? "";
+    const startTime = window.prompt("Start time (HH:MM):")?.trim() ?? "";
+    const requesterPhone = window.prompt("Requester phone:") ?? "";
+    const ownerPhone = window.prompt("Owner phone:") ?? "";
+    const links = window.prompt("Links (comma separated):") ?? "";
+    const imageUrls = window.prompt("Image URLs (comma separated):") ?? "";
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError("You must be logged in.");
+      return;
+    }
+
+    const taskId = crypto.randomUUID();
+    const { error: taskError } = await supabase.from("tasks").insert({
+      id: taskId,
+      user_id: user.id,
+      title,
+      date: date || null,
+      start_time: startTime || null,
+      status: "pending",
+    });
+    if (taskError) {
+      setError(taskError.message);
+      return;
+    }
+
+    const { error: requestError } = await supabase.from("coverage_requests").insert({
+      task_id: taskId,
+      group_id: groupId,
+      requested_by: user.id,
+      status: "OPEN",
+      requester_phone: requesterPhone || null,
+      owner_phone: ownerPhone || null,
+      links: links || null,
+      image_urls: imageUrls || null,
+    });
+
+    if (requestError) {
+      setError(requestError.message);
+      return;
+    }
+
+    setError(null);
+    alert("Coverage request created.");
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
@@ -101,6 +154,13 @@ export default function GroupChat({
         onSubmit={handleSend}
         className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800"
       >
+        <button
+          type="button"
+          onClick={handleCreateRequest}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        >
+          +
+        </button>
         <input
           type="text"
           value={content}

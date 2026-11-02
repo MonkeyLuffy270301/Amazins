@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import AddTaskForm from "@/components/AddTaskForm";
+import AddTaskModal from "@/components/AddTaskModal";
+import CreateRequestModal from "@/components/CreateRequestModal";
 import RequestCoverageButton from "@/components/RequestCoverageButton";
 import AcceptCoverageButton from "@/components/AcceptCoverageButton";
+import TaskRow from "@/components/TaskRow";
 
 export const instant = false;
 
@@ -15,6 +17,9 @@ type Task = {
   end_time: string | null;
   location: string | null;
   status: string | null;
+  phone?: string | null;
+  links?: string | null;
+  image_urls?: string | null;
 };
 
 type CoverageRequest = {
@@ -25,6 +30,14 @@ type CoverageRequest = {
   status: string | null;
   tasks: { title: string | null; date: string | null } | null;
 };
+
+function isExpired(task: Task) {
+  if (!task.date) return false;
+  const start = task.start_time || "00:00";
+  const parsed = new Date(`${task.date}T${start.length === 5 ? start + ":00" : start}`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now() - 10 * 60 * 1000;
+}
 
 export default async function Dashboard() {
   await connection();
@@ -44,8 +57,7 @@ export default async function Dashboard() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const displayName =
-    profile?.full_name?.trim() || user.email || "there";
+  const displayName = profile?.full_name?.trim() || user.email || "there";
 
   const { data: tasks } = await supabase
     .from("tasks")
@@ -70,100 +82,147 @@ export default async function Dashboard() {
     coverageRequests = (reqs ?? []) as unknown as CoverageRequest[];
   }
 
-  const todayTasks = (tasks ?? []) as Task[];
+  const allTasks = (tasks ?? []) as Task[];
+  const visibleTasks = allTasks.filter((t) => !isExpired(t));
+  const immediateTasks = visibleTasks.slice(0, 2);
 
   return (
-    <main className="min-h-screen bg-zinc-50 p-6 dark:bg-black">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+    <main className="min-h-screen bg-zinc-100 p-6 dark:bg-zinc-950">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Welcome back, {displayName}
         </h1>
 
-        <AddTaskForm />
+        {/* Top section: Weekly calendar placeholder + 2 immediate items */}
+        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
+            Weekly Calendar
+          </h2>
+          <div className="rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+            Weekly calendar placeholder
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-              Today&apos;s Tasks
-            </h2>
-            {todayTasks.length === 0 ? (
+          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                Immediate Tasks
+              </h2>
+              <AddTaskModal />
+            </div>
+            {immediateTasks.length === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                No tasks scheduled for today.
-              </p>
-            ) : (
-              <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {todayTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="rounded-lg border border-zinc-100 px-3 py-2 dark:border-zinc-800"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {task.title}
-                      </div>
-                      <RequestCoverageButton taskId={task.id} />
-                    </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {task.date ? `Date: ${task.date}` : null}
-                      {task.location ? ` · Location: ${task.location}` : null}
-                      {task.status ? ` · Status: ${task.status}` : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-              Coverage Requests
-            </h2>
-            {coverageRequests.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                No open coverage requests.
+                No tasks scheduled.
               </p>
             ) : (
               <ul className="space-y-2">
-                {coverageRequests.map((req) => (
+                {immediateTasks.map((task) => (
                   <li
-                    key={req.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 dark:border-zinc-800"
+                    key={task.id}
+                    className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
                   >
-                    <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {req.tasks?.title ?? "Unknown task"}
-                      </div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {req.tasks?.date ? `Date: ${req.tasks.date} · ` : null}
-                        Requested by:{" "}
-                        {req.requested_by === user.id ? "You" : req.requested_by}
-                      </div>
-                    </div>
-                    <AcceptCoverageButton requestId={req.id} />
+                    <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                      {task.title}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-              Group Messages
-            </h2>
-            <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <li>• Design team: New mockups ready</li>
-              <li>• Engineering: Deployment scheduled</li>
-            </ul>
+          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                Immediate Requests
+              </h2>
+              <CreateRequestModal />
+            </div>
+            {coverageRequests.slice(0, 2).length === 0 ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                No requests.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {coverageRequests.slice(0, 2).map((req) => (
+                  <li
+                    key={req.id}
+                    className="rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                  >
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {req.tasks?.title ?? "Unknown task"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
+        </div>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-              AI Assistant
-            </h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Ask me anything about your workflow, tasks, or team.
-            </p>
-          </section>
+        {/* Bottom grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+          {/* Left column 40% */}
+          <div className="space-y-4 md:col-span-2">
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                  Task List
+                </h2>
+                <AddTaskModal />
+              </div>
+              {visibleTasks.length === 0 ? (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  No tasks.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {visibleTasks.slice(0, 5).map((task) => (
+                    <TaskRow key={task.id} task={task} />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                  Request Box
+                </h2>
+                <CreateRequestModal />
+              </div>
+              {coverageRequests.length === 0 ? (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  No open requests.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {coverageRequests.map((req) => (
+                    <li
+                      key={req.id}
+                      className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                    >
+                      <div className="text-sm text-zinc-900 dark:text-zinc-50">
+                        {req.tasks?.title ?? "Unknown task"}
+                      </div>
+                      <AcceptCoverageButton requestId={req.id} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+
+          {/* Right column 60% */}
+          <div className="md:col-span-3">
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                Interaction Panel
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Groups and DMs will go here
+              </p>
+            </section>
+          </div>
         </div>
       </div>
     </main>
