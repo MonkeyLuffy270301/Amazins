@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import RequestCoverageModal from "@/components/RequestCoverageModal";
 
@@ -27,6 +27,8 @@ export default function GroupChat({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [requestOpen, setRequestOpen] = useState(false);
   const [requestTask, setRequestTask] = useState<{
     id: string;
@@ -160,6 +162,22 @@ export default function GroupChat({
         )}
       </div>
 
+      {imagePreview && (
+        <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
+          <img src={imagePreview} alt="preview" className="h-16 rounded-md" />
+        </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0] ?? null;
+          setImagePreview(file ? URL.createObjectURL(file) : null);
+        }}
+      />
       <form
         onSubmit={handleSend}
         className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800"
@@ -179,10 +197,10 @@ export default function GroupChat({
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 onClick={() => {
                   setMenuOpen(false);
-                  console.log("Upload Photo");
+                  fileInputRef.current?.click();
                 }}
               >
-                Upload Photo
+                Photo/Camera
               </button>
               <button
                 type="button"

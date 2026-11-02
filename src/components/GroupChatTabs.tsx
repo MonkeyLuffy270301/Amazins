@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 
 type Request = {
   id: string;
+  task_id: string;
   status: string | null;
   tasks: { title: string | null; date: string | null; start_time: string | null } | null;
   pickup_place?: string | null;
@@ -47,6 +48,10 @@ export default function GroupChatTabs({
     null
   );
   const [processing, setProcessing] = useState(false);
+  const [forwardRequest, setForwardRequest] = useState<Request | null>(null);
+  const [forwardGroups, setForwardGroups] = useState<{ id: string; name: string }[]>([]);
+  const [selectedForward, setSelectedForward] = useState<string[]>([]);
+  const [forwarding, setForwarding] = useState(false);
 
   const confirmAccept = async () => {
     if (!confirm || confirm.action !== "accept") return;
@@ -183,6 +188,34 @@ export default function GroupChatTabs({
                       >
                         Decline
                       </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setForwardRequest(r);
+                          const supabase = createClient();
+                          const {
+                            data: { user },
+                          } = await supabase.auth.getUser();
+                          if (!user) return;
+                          const { data: memberships } = await supabase
+                            .from("group_members")
+                            .select("group_id, groups(id, name)")
+                            .eq("user_id", user.id);
+                          const groups = (memberships ?? [])
+                            .map((m: { groups: { id: string; name: string }[] | null }) =>
+                              Array.isArray(m.groups) ? m.groups[0] : m.groups
+                            )
+                            .filter((g: { id: string; name: string } | null) => g && g.id !== groupId) as {
+                            id: string;
+                            name: string;
+                          }[];
+                          setForwardGroups(groups);
+                          setSelectedForward([]);
+                        }}
+                        className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      >
+                        Forward
+                      </button>
                     </div>
                   )}
                 </div>
@@ -213,6 +246,71 @@ export default function GroupChatTabs({
                 className="rounded-md bg-zinc-900 px-3 py-1 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
               >
                 {processing ? "..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {forwardRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            <h3 className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              Forward to groups
+            </h3>
+            <div className="max-h-40 space-y-1 overflow-auto">
+              {forwardGroups.map((g) => (
+                <label key={g.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedForward.includes(g.id)}
+                    onChange={() =>
+                      setSelectedForward((prev) =>
+                        prev.includes(g.id)
+                          ? prev.filter((x) => x !== g.id)
+                          : [...prev, g.id]
+                      )
+                    }
+                  />
+                  {g.name}
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setForwardRequest(null)}
+                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={forwarding || selectedForward.length === 0}
+                onClick={async () => {
+                  setForwarding(true);
+                  const supabase = createClient();
+                  for (const gid of selectedForward) {
+                    await supabase.from("coverage_requests").insert({
+                      task_id: forwardRequest.task_id,
+                      group_id: gid,
+                      requested_by: forwardRequest.requested_by,
+                      status: "OPEN",
+                      pickup_place: forwardRequest.pickup_place ?? null,
+                      pickup_time: forwardRequest.pickup_time ?? null,
+                      requester_phone: forwardRequest.requester_phone ?? null,
+                      owner_phone: forwardRequest.owner_phone ?? null,
+                      links: forwardRequest.links ?? null,
+                      image_urls: forwardRequest.image_urls ?? null,
+                    });
+                  }
+                  setForwarding(false);
+                  setForwardRequest(null);
+                  router.refresh();
+                }}
+                className="rounded-md bg-zinc-900 px-3 py-1 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                {forwarding ? "..." : "Forward"}
               </button>
             </div>
           </div>

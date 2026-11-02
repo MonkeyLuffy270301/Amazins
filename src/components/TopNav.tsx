@@ -27,7 +27,9 @@ export default function TopNav() {
   const router = useRouter();
   const supabase = createClient();
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<TaskResult[]>([]);
+  const [taskResults, setTaskResults] = useState<TaskResult[]>([]);
+  const [groupResults, setGroupResults] = useState<{ id: string; name: string }[]>([]);
+  const [peopleResults, setPeopleResults] = useState<{ id: string; label: string }[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEmail, setProfileEmail] = useState<string | null>(null);
@@ -37,16 +39,62 @@ export default function TopNav() {
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!search.trim()) {
-        setResults([]);
+      const q = search.trim();
+      if (q.length < 2) {
+        setTaskResults([]);
+        setGroupResults([]);
+        setPeopleResults([]);
+        setSearchOpen(false);
         return;
       }
-      const { data } = await supabase
-        .from("tasks")
-        .select("id, title, date")
-        .ilike("title", `%${search.trim()}%`)
+      // tasks
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      let tasks: TaskResult[] = [];
+      if (user) {
+        const { data } = await supabase
+          .from("tasks")
+          .select("id, title, date")
+          .eq("user_id", user.id)
+          .ilike("title", `%${q}%`)
+          .limit(8);
+        tasks = (data ?? []) as TaskResult[];
+      }
+      setTaskResults(tasks);
+
+      // groups: get user's groups
+      let groups: { id: string; name: string }[] = [];
+      if (user) {
+        const { data: memberships } = await supabase
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", user.id);
+        const ids = (memberships ?? []).map((m: { group_id: string }) => m.group_id);
+        if (ids.length) {
+          const { data: gData } = await supabase
+            .from("groups")
+            .select("id, name")
+            .in("id", ids)
+            .ilike("name", `%${q}%`)
+            .limit(8);
+          groups = (gData ?? []) as { id: string; name: string }[];
+        }
+      }
+      setGroupResults(groups);
+
+      // people
+      const { data: pData } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .or(`full_name.ilike.%${q}%,id.ilike.%${q}%`)
         .limit(8);
-      setResults((data ?? []) as TaskResult[]);
+      const people = (pData ?? []).map((p: { id: string; full_name: string | null }) => ({
+        id: p.id,
+        label: p.full_name || p.id,
+      }));
+      setPeopleResults(people);
+
       setSearchOpen(true);
     };
     const t = setTimeout(fetchResults, 250);
@@ -114,27 +162,74 @@ export default function TopNav() {
               className="w-full bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none dark:text-zinc-50"
             />
           </div>
-          {searchOpen && results.length > 0 && (
+          {searchOpen &&
+            (taskResults.length > 0 || groupResults.length > 0 || peopleResults.length > 0) && (
             <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              <ul>
-                {results.map((r) => (
-                  <li key={r.id}>
-                    <Link
-                      href="/dashboard"
-                      className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-                      onClick={() => {
-                        setSearchOpen(false);
-                        setSearch("");
-                      }}
-                    >
-                      {r.title}
-                      {r.date ? (
-                        <span className="ml-2 text-xs text-zinc-500">{r.date}</span>
-                      ) : null}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {taskResults.length > 0 && (
+                <div>
+                  <div className="px-3 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    Tasks
+                  </div>
+                  <ul>
+                    {taskResults.map((r) => (
+                      <li key={r.id}>
+                        <Link
+                          href="/dashboard"
+                          className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearch("");
+                          }}
+                        >
+                          {r.title}
+                          {r.date ? (
+                            <span className="ml-2 text-xs text-zinc-500">{r.date}</span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {groupResults.length > 0 && (
+                <div>
+                  <div className="px-3 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    Groups
+                  </div>
+                  <ul>
+                    {groupResults.map((g) => (
+                      <li key={g.id}>
+                        <Link
+                          href={`/groups/${g.id}`}
+                          className="block px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearch("");
+                          }}
+                        >
+                          {g.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {peopleResults.length > 0 && (
+                <div>
+                  <div className="px-3 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    People
+                  </div>
+                  <ul>
+                    {peopleResults.map((p) => (
+                      <li key={p.id}>
+                        <span className="block px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50">
+                          {p.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>
