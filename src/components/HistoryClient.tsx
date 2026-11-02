@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 type Task = {
@@ -42,6 +43,9 @@ export default function HistoryClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [coverage, setCoverage] = useState<Coverage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [clearType, setClearType] = useState<"tasks" | "coverage" | "deleted" | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const router = useRouter();
 
   const { start, end } = useMemo(() => getWeekRange(weekOffset), [weekOffset]);
   const startStr = start.toISOString().slice(0, 10);
@@ -128,6 +132,33 @@ export default function HistoryClient() {
         </div>
 
         <div className="flex items-center gap-2">
+          {tab === "tasks" && (
+            <button
+              type="button"
+              onClick={() => setClearType("tasks")}
+              className="rounded-md border border-red-300 px-2 py-1 text-sm text-red-600 dark:border-red-700"
+            >
+              Clear Task History
+            </button>
+          )}
+          {tab === "coverage" && (
+            <button
+              type="button"
+              onClick={() => setClearType("coverage")}
+              className="rounded-md border border-red-300 px-2 py-1 text-sm text-red-600 dark:border-red-700"
+            >
+              Clear Request History
+            </button>
+          )}
+          {tab === "deleted" && (
+            <button
+              type="button"
+              onClick={() => setClearType("deleted")}
+              className="rounded-md border border-red-300 px-2 py-1 text-sm text-red-600 dark:border-red-700"
+            >
+              Clear Deleted History
+            </button>
+          )}
           <button
             onClick={() => setWeekOffset((o) => Math.min(o + 1, 5))}
             disabled={weekOffset >= 5}
@@ -235,6 +266,62 @@ export default function HistoryClient() {
             </li>
           ))}
         </ul>
+      )}
+
+      {clearType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-sm text-zinc-900 dark:text-zinc-50">
+              Are you sure? This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setClearType(null)}
+                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={clearing}
+                onClick={async () => {
+                  setClearing(true);
+                  const supabase = createClient();
+                  const {
+                    data: { user },
+                  } = await supabase.auth.getUser();
+                  if (user) {
+                    if (clearType === "tasks") {
+                      await supabase
+                        .from("tasks")
+                        .delete()
+                        .eq("user_id", user.id)
+                        .eq("status", "COMPLETED");
+                    } else if (clearType === "deleted") {
+                      await supabase
+                        .from("tasks")
+                        .delete()
+                        .eq("user_id", user.id)
+                        .not("deleted_at", "is", null);
+                    } else if (clearType === "coverage") {
+                      await supabase
+                        .from("coverage_requests")
+                        .delete()
+                        .eq("requested_by", user.id);
+                    }
+                  }
+                  setClearing(false);
+                  setClearType(null);
+                  window.location.reload();
+                }}
+                className="rounded-md bg-red-600 px-3 py-1 text-sm text-white"
+              >
+                {clearing ? "..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
