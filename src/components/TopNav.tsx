@@ -9,9 +9,8 @@ import { Bot, Search, User } from "lucide-react";
 const LEFT_LINKS = [
   ["Dashboard", "/dashboard"],
   ["Calendar", "/calendar"],
-  ["Groups", "/groups"],
+  ["Interaction", "/interaction"],
   ["Import", "/import"],
-  ["Messages", "/messages"],
   ["AI Assistant", "/ai"],
   ["History", "/history"],
 ];

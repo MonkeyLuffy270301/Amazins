@@ -77,9 +77,8 @@ export default async function GroupChatPage({
 
   const { data: groupRequests } = await supabase
     .from("coverage_requests")
-    .select("id, status, requested_by, requester_phone, owner_phone, links, image_urls, tasks(title, date, start_time)")
-    .eq("group_id", id)
-    .eq("status", "OPEN");
+    .select("id, status, requested_by, accepted_by, requester_phone, owner_phone, links, image_urls, tasks(title, date, start_time)")
+    .eq("group_id", id);
 
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-black">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import GroupChat from "@/components/GroupChat";
-import AcceptCoverageButton from "@/components/AcceptCoverageButton";
+import { createClient } from "@/utils/supabase/client";
 
 type Request = {
   id: string;
@@ -15,6 +16,7 @@ type Request = {
   links?: string | null;
   image_urls?: string | null;
   requested_by: string;
+  accepted_by?: string | null;
 };
 
 function isRequestExpired(r: Request) {
@@ -40,6 +42,40 @@ export default function GroupChatTabs({
   requests: Request[];
 }) {
   const [tab, setTab] = useState<"chat" | "requests">("chat");
+  const router = useRouter();
+  const [confirm, setConfirm] = useState<{ id: string; action: "accept" | "decline" } | null>(
+    null
+  );
+  const [processing, setProcessing] = useState(false);
+
+  const confirmAccept = async () => {
+    if (!confirm || confirm.action !== "accept") return;
+    setProcessing(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("accept_coverage", {
+      request_id: confirm.id,
+    });
+    setProcessing(false);
+    setConfirm(null);
+    if (error) {
+      alert("Sorry, someone else already accepted this.");
+      return;
+    }
+    router.refresh();
+  };
+
+  const confirmDecline = async () => {
+    if (!confirm || confirm.action !== "decline") return;
+    setProcessing(true);
+    const supabase = createClient();
+    await supabase
+      .from("coverage_requests")
+      .update({ status: "DECLINED" })
+      .eq("id", confirm.id);
+    setProcessing(false);
+    setConfirm(null);
+    router.refresh();
+  };
 
   return (
     <div>
@@ -80,56 +116,106 @@ export default function GroupChatTabs({
               No active requests.
             </p>
           ) : (
-            requests.map((r) => (
-              <div
-                key={r.id}
-                className={`rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${
-                  isRequestExpired(r) ? "opacity-50 blur-sm" : ""
-                }`}
-              >
-                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                  {r.tasks?.title ?? "Unknown task"}
-                </div>
-                <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
-                  {r.pickup_place ? ` · Place: ${r.pickup_place}` : ""}
-                  {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
-                </div>
-                <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  {r.requester_phone ? `Requester Phone: ${r.requester_phone}` : ""}
-                  {r.owner_phone ? ` · Owner Phone: ${r.owner_phone}` : ""}
-                </div>
-                {r.links && (
-                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Links: {r.links}
+            requests.map((r) => {
+              const expired = r.status === "OPEN" && isRequestExpired(r);
+              const accepted = r.status === "ACCEPTED";
+              const declined = r.status === "DECLINED";
+              const blurred = accepted || declined || expired;
+              return (
+                <div
+                  key={r.id}
+                  className={`rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${
+                    blurred ? "opacity-50 blur-sm" : ""
+                  }`}
+                >
+                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                    {r.tasks?.title ?? "Unknown task"}
                   </div>
-                )}
-                {r.image_urls && (
                   <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Images: {r.image_urls}
+                    {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
+                    {r.pickup_place ? ` · Place: ${r.pickup_place}` : ""}
+                    {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
                   </div>
-                )}
-                <div className="mt-3 flex gap-2">
-                  <AcceptCoverageButton requestId={r.id} disabled={isRequestExpired(r)} />
-                  <button
-                    type="button"
-                    disabled={isRequestExpired(r)}
-                    onClick={async () => {
-                      const supabase = (await import("@/utils/supabase/client")).createClient();
-                      await supabase
-                        .from("coverage_requests")
-                        .update({ status: "DECLINED" })
-                        .eq("id", r.id);
-                      window.location.reload();
-                    }}
-                    className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Decline
-                  </button>
+                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {r.requester_phone ? `Requester Phone: ${r.requester_phone}` : ""}
+                    {r.owner_phone ? ` · Owner Phone: ${r.owner_phone}` : ""}
+                  </div>
+                  {r.links && (
+                    <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      Links: {r.links}
+                    </div>
+                  )}
+                  {r.image_urls && (
+                    <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      Images: {r.image_urls}
+                    </div>
+                  )}
+
+                  {accepted && (
+                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                      Accepted by {r.accepted_by ?? "someone"}
+                    </div>
+                  )}
+                  {declined && (
+                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                      Declined
+                    </div>
+                  )}
+                  {r.status === "OPEN" && expired && (
+                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                      Expired
+                    </div>
+                  )}
+
+                  {r.status === "OPEN" && !expired && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirm({ id: r.id, action: "accept" })}
+                        className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirm({ id: r.id, action: "decline" })}
+                        className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
+        </div>
+      )}
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-sm text-zinc-900 dark:text-zinc-50">
+              Are you sure you want to {confirm.action} this request?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirm(null)}
+                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={processing}
+                onClick={confirm.action === "accept" ? confirmAccept : confirmDecline}
+                className="rounded-md bg-zinc-900 px-3 py-1 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                {processing ? "..." : "Confirm"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

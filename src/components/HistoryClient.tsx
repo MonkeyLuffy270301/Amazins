@@ -37,7 +37,7 @@ function fmt(date: Date) {
 }
 
 export default function HistoryClient() {
-  const [tab, setTab] = useState<"tasks" | "coverage">("tasks");
+  const [tab, setTab] = useState<"tasks" | "coverage" | "deleted">("tasks");
   const [weekOffset, setWeekOffset] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [coverage, setCoverage] = useState<Coverage[]>([]);
@@ -61,8 +61,17 @@ export default function HistoryClient() {
           .from("tasks")
           .select("id, title, date, status")
           .eq("user_id", user.id)
+          .is("deleted_at", null)
           .gte("date", startStr)
           .lte("date", endStr)
+          .order("date", { ascending: true });
+        setTasks((data ?? []) as Task[]);
+      } else if (tab === "deleted") {
+        const { data } = await supabase
+          .from("tasks")
+          .select("id, title, date, status")
+          .eq("user_id", user.id)
+          .not("deleted_at", "is", null)
           .order("date", { ascending: true });
         setTasks((data ?? []) as Task[]);
       } else {
@@ -105,6 +114,16 @@ export default function HistoryClient() {
           >
             Coverage History
           </button>
+          <button
+            onClick={() => setTab("deleted")}
+            className={`px-3 py-1 text-sm font-medium ${
+              tab === "deleted"
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "text-zinc-600 dark:text-zinc-400"
+            }`}
+          >
+            Deleted Tasks
+          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -130,7 +149,7 @@ export default function HistoryClient() {
 
       {loading ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading...</p>
-      ) : tab === "tasks" ? (
+      ) : tab === "tasks" || tab === "deleted" ? (
         tasks.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">No tasks this week.</p>
         ) : (
@@ -148,8 +167,26 @@ export default function HistoryClient() {
                     {t.status ?? "PENDING"}
                   </span>
                 </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {t.date ?? ""}
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {t.date ?? ""}
+                  </div>
+                  {tab === "deleted" && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const supabase = createClient();
+                        await supabase
+                          .from("tasks")
+                          .update({ deleted_at: null })
+                          .eq("id", t.id);
+                        setTasks((prev) => prev.filter((x) => x.id !== t.id));
+                      }}
+                      className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                    >
+                      Restore
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

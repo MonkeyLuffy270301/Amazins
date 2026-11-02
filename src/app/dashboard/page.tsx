@@ -64,6 +64,7 @@ export default async function Dashboard() {
     .from("tasks")
     .select("*")
     .eq("user_id", user.id)
+    .is("deleted_at", null)
     .order("date", { ascending: true });
 
   const { data: memberships } = await supabase

@@ -38,7 +38,10 @@ export default function TaskRow({ task }: { task: Task }) {
     if (!window.confirm("Delete this task?")) return;
     setDeleting(true);
     const supabase = createClient();
-    await supabase.from("tasks").delete().eq("id", task.id);
+    await supabase
+      .from("tasks")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", task.id);
     setDeleting(false);
     setMenuOpen(false);
     router.refresh();
@@ -175,6 +178,20 @@ export default function TaskRow({ task }: { task: Task }) {
                 }}
               >
                 Request Coverage
+              </button>
+              <button
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  const supabase = createClient();
+                  await supabase
+                    .from("tasks")
+                    .update({ status: "COMPLETED" })
+                    .eq("id", task.id);
+                  router.refresh();
+                }}
+              >
+                Mark as Completed
               </button>
               <button
                 className="block w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
