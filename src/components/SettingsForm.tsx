@@ -8,6 +8,7 @@ type Profile = {
   full_name: string | null;
   phone: string | null;
   region: string | null;
+  address: string | null;
   avatar_url: string | null;
 };
 
@@ -15,9 +16,12 @@ export default function SettingsForm() {
   const router = useRouter();
   const [tab, setTab] = useState<"account" | "preferences" | "themes">("account");
 
+  const [email, setEmail] = useState("");
+  const [originalEmail, setOriginalEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [region, setRegion] = useState("");
+  const [address, setAddress] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,10 +39,12 @@ export default function SettingsForm() {
       } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
+      setEmail(user.email ?? "");
+      setOriginalEmail(user.email ?? "");
 
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, region, avatar_url")
+        .select("full_name, phone, region, address, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -47,6 +53,7 @@ export default function SettingsForm() {
         setFullName(p.full_name ?? "");
         setPhone(p.phone ?? "");
         setRegion(p.region ?? "");
+        setAddress(p.address ?? "");
         setAvatarUrl(p.avatar_url ?? "");
       }
       setLoading(false);
@@ -57,17 +64,34 @@ export default function SettingsForm() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
+    if (!fullName.trim() || !region.trim() || !address.trim()) {
+      setError("Full Name, Region, and Address are required.");
+      return;
+    }
     setError(null);
     setSuccess(null);
     setSaving(true);
 
     const supabase = createClient();
+    if (email.trim() && email.trim() !== originalEmail) {
+      const { error: emailError } = await supabase.auth.updateUser({
+        email: email.trim(),
+      });
+      if (emailError) {
+        setSaving(false);
+        setError(emailError.message);
+        return;
+      }
+      alert("A confirmation link has been sent to your new email.");
+    }
+
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
         full_name: fullName,
         phone,
         region,
+        address,
         avatar_url: avatarUrl,
       })
       .eq("id", userId);
@@ -146,11 +170,23 @@ export default function SettingsForm() {
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Full Name
             </label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              required
               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
             />
           </div>
@@ -171,6 +207,18 @@ export default function SettingsForm() {
             <input
               value={region}
               onChange={(e) => setRegion(e.target.value)}
+              required
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Address
+            </label>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
             />
           </div>
