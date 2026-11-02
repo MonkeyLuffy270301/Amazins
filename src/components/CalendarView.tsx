@@ -74,7 +74,7 @@ export default function CalendarView() {
   const displayTasks = selectedDate ? tasksForDate(selectedDate) : [];
 
   return (
-    <div>
+    <div className="overflow-x-auto">
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setView("month")}

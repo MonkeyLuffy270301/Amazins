@@ -119,18 +119,49 @@ export default async function Dashboard() {
                 No tasks scheduled.
               </p>
             ) : (
-              <ul className="space-y-2">
-                {immediateTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
-                  >
-                    <span className="text-sm text-zinc-900 dark:text-zinc-50">
-                      {task.title}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-2">
+                  {immediateTasks.slice(0, 1).map((task) => (
+                    <li
+                      key={task.id}
+                      className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                    >
+                      <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                        {task.title}
+                      </span>
+                    </li>
+                  ))}
+                  {immediateTasks.slice(1).map((task) => (
+                    <li
+                      key={task.id}
+                      className="hidden md:flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                    >
+                      <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                        {task.title}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {immediateTasks.length > 1 && (
+                  <details className="mt-2 md:hidden">
+                    <summary className="cursor-pointer text-sm text-zinc-500 dark:text-zinc-400">
+                      Expand
+                    </summary>
+                    <ul className="mt-2 space-y-2">
+                      {immediateTasks.slice(1).map((task) => (
+                        <li
+                          key={task.id}
+                          className="flex items-center justify-between rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                        >
+                          <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                            {task.title}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </>
             )}
           </section>
 
@@ -146,24 +177,55 @@ export default async function Dashboard() {
                 No requests.
               </p>
             ) : (
-              <ul className="space-y-2">
-                {coverageRequests.slice(0, 2).map((req) => (
-                  <li
-                    key={req.id}
-                    className="rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
-                  >
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {req.tasks?.title ?? "Unknown task"}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-2">
+                  {coverageRequests.slice(0, 1).map((req) => (
+                    <li
+                      key={req.id}
+                      className="rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                    >
+                      <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        {req.tasks?.title ?? "Unknown task"}
+                      </div>
+                    </li>
+                  ))}
+                  {coverageRequests.slice(1, 2).map((req) => (
+                    <li
+                      key={req.id}
+                      className="hidden md:block rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                    >
+                      <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        {req.tasks?.title ?? "Unknown task"}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {coverageRequests.length > 1 && (
+                  <details className="mt-2 md:hidden">
+                    <summary className="cursor-pointer text-sm text-zinc-500 dark:text-zinc-400">
+                      Expand
+                    </summary>
+                    <ul className="mt-2 space-y-2">
+                      {coverageRequests.slice(1, 2).map((req) => (
+                        <li
+                          key={req.id}
+                          className="rounded-md border border-zinc-200 p-2 dark:border-zinc-700"
+                        >
+                          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                            {req.tasks?.title ?? "Unknown task"}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </>
             )}
           </section>
         </div>
 
         {/* Bottom grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="flex flex-col gap-4 md:grid md:grid-cols-5">
           {/* Left column 40% */}
           <div className="space-y-4 md:col-span-2">
             <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
