@@ -131,93 +131,113 @@ export default function GroupChatTabs({
               return (
                 <div
                   key={r.id}
-                  className={`rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${
-                    blurred ? "opacity-50 blur-sm" : ""
-                  }`}
+                  className="relative rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
                 >
-                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {r.tasks?.title ?? "Unknown task"}
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
-                    {r.place ? ` · Place: ${r.place}` : ""}
-                    {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {r.phone_requester ? `Requester Phone: ${r.phone_requester}` : ""}
-                    {r.phone_owner ? ` · Owner Phone: ${r.phone_owner}` : ""}
-                  </div>
-                  {r.links && (
+                  <div className={blurred ? "opacity-50 blur-sm" : ""}>
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {r.tasks?.title ?? "Unknown task"}
+                    </div>
                     <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Links: {r.links}
+                      {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
+                      {r.place ? ` · Place: ${r.place}` : ""}
+                      {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
                     </div>
-                  )}
-                  {r.image_urls && (
                     <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Images: {r.image_urls}
+                      {r.phone_requester ? `Requester Phone: ${r.phone_requester}` : ""}
+                      {r.phone_owner ? ` · Owner Phone: ${r.phone_owner}` : ""}
                     </div>
-                  )}
+                    {r.links && (
+                      <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        Links: {r.links}
+                      </div>
+                    )}
+                    {r.image_urls && (
+                      <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        Images: {r.image_urls}
+                      </div>
+                    )}
 
-                  {accepted && (
-                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                      Accepted by: {r.accepter_name ?? "someone"}
-                    </div>
-                  )}
-                  {declined && (
-                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                      Declined
-                    </div>
-                  )}
-                  {r.status === "OPEN" && expired && (
-                    <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                      Expired
-                    </div>
-                  )}
+                    {accepted && (
+                      <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                        Accepted by: {r.accepter_name ?? "A group member"}
+                      </div>
+                    )}
+                    {declined && (
+                      <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                        Declined
+                      </div>
+                    )}
+                    {r.status === "OPEN" && expired && (
+                      <div className="mt-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                        Expired
+                      </div>
+                    )}
 
-                  {r.status === "OPEN" && !expired && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setConfirm({ id: r.id, action: "accept" })}
-                        className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                    {r.status === "OPEN" && !expired && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirm({ id: r.id, action: "accept" })}
+                          className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirm({ id: r.id, action: "decline" })}
+                          className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setForwardRequest(r);
+                            const supabase = createClient();
+                            const {
+                              data: { user },
+                            } = await supabase.auth.getUser();
+                            if (!user) return;
+                            const { data: memberships } = await supabase
+                              .from("group_members")
+                              .select("group_id, groups(id, name)")
+                              .eq("user_id", user.id);
+                            const groups = (memberships ?? [])
+                              .map((m: { groups: { id: string; name: string }[] | null }) =>
+                                Array.isArray(m.groups) ? m.groups[0] : m.groups
+                              )
+                              .filter((g: { id: string; name: string } | null) => g && g.id !== groupId) as {
+                              id: string;
+                              name: string;
+                            }[];
+                            setForwardGroups(groups);
+                            setSelectedForward([]);
+                          }}
+                          className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        >
+                          Forward
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {blurred && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div
+                        className={
+                          accepted
+                            ? "bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg"
+                            : declined
+                            ? "bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg"
+                            : "bg-gray-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg"
+                        }
                       >
-                        Accept
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirm({ id: r.id, action: "decline" })}
-                        className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      >
-                        Decline
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setForwardRequest(r);
-                          const supabase = createClient();
-                          const {
-                            data: { user },
-                          } = await supabase.auth.getUser();
-                          if (!user) return;
-                          const { data: memberships } = await supabase
-                            .from("group_members")
-                            .select("group_id, groups(id, name)")
-                            .eq("user_id", user.id);
-                          const groups = (memberships ?? [])
-                            .map((m: { groups: { id: string; name: string }[] | null }) =>
-                              Array.isArray(m.groups) ? m.groups[0] : m.groups
-                            )
-                            .filter((g: { id: string; name: string } | null) => g && g.id !== groupId) as {
-                            id: string;
-                            name: string;
-                          }[];
-                          setForwardGroups(groups);
-                          setSelectedForward([]);
-                        }}
-                        className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      >
-                        Forward
-                      </button>
+                        {accepted
+                          ? `Accepted by: ${r.accepter_name || "A group member"}`
+                          : declined
+                          ? "Declined"
+                          : "Expired"}
+                      </div>
                     </div>
                   )}
                 </div>
