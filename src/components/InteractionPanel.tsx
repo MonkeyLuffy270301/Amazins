@@ -24,11 +24,20 @@ export default function InteractionPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      setPinned(JSON.parse(localStorage.getItem(PIN_KEY) || "[]"));
-    } catch {
-      setPinned([]);
-    }
+    const loadPinned = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("pinned_chats")
+        .eq("id", user.id)
+        .single();
+      setPinned((data?.pinned_chats as string[]) ?? []);
+    };
+    loadPinned();
   }, []);
 
   useEffect(() => {
@@ -122,7 +131,7 @@ export default function InteractionPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinned]);
 
-  const togglePin = (key: string) => {
+  const togglePin = async (key: string) => {
     let next = [...pinned];
     if (next.includes(key)) {
       next = next.filter((k) => k !== key);
@@ -134,7 +143,16 @@ export default function InteractionPanel() {
       next.push(key);
     }
     setPinned(next);
-    localStorage.setItem(PIN_KEY, JSON.stringify(next));
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ pinned_chats: next })
+        .eq("id", user.id);
+    }
   };
 
   if (loading) {

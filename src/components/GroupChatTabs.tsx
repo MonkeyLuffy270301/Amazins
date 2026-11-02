@@ -8,6 +8,8 @@ type Request = {
   id: string;
   status: string | null;
   tasks: { title: string | null; date: string | null; start_time: string | null } | null;
+  pickup_place?: string | null;
+  pickup_time?: string | null;
   requester_phone?: string | null;
   owner_phone?: string | null;
   links?: string | null;
@@ -90,8 +92,12 @@ export default function GroupChatTabs({
                 </div>
                 <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                   {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
-                  {r.requester_phone ? ` · Requester: ${r.requester_phone}` : ""}
-                  {r.owner_phone ? ` · Owner: ${r.owner_phone}` : ""}
+                  {r.pickup_place ? ` · Place: ${r.pickup_place}` : ""}
+                  {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
+                </div>
+                <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {r.requester_phone ? `Requester Phone: ${r.requester_phone}` : ""}
+                  {r.owner_phone ? ` · Owner Phone: ${r.owner_phone}` : ""}
                 </div>
                 {r.links && (
                   <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">

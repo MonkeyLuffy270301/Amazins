@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import DirectChat from "@/components/DirectChat";
+import DirectChatTabs from "@/components/DirectChatTabs";
 
 export const instant = false;
 
@@ -93,7 +93,7 @@ export default async function DirectMessagePage({
         <h1 className="mb-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Private Chat
         </h1>
-        <DirectChat
+        <DirectChatTabs
           otherUserId={otherUserId}
           initialMessages={(messages ?? []) as Message[]}
           currentUserId={user.id}

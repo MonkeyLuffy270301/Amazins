@@ -6,6 +6,7 @@ import CreateRequestModal from "@/components/CreateRequestModal";
 import RequestCoverageButton from "@/components/RequestCoverageButton";
 import AcceptCoverageButton from "@/components/AcceptCoverageButton";
 import TaskRow from "@/components/TaskRow";
+import InteractionPanel from "@/components/InteractionPanel";
 
 export const instant = false;
 
@@ -218,9 +219,7 @@ export default async function Dashboard() {
               <h2 className="mb-3 text-lg font-medium text-zinc-900 dark:text-zinc-50">
                 Interaction Panel
               </h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Groups and DMs will go here
-              </p>
+              <InteractionPanel />
             </section>
           </div>
         </div>
