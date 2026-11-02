@@ -10,6 +10,7 @@ type Task = {
   id: string;
   title: string;
   date: string | null;
+  start_time: string | null;
   location: string | null;
   phone?: string | null;
   links?: string | null;
