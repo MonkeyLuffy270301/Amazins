@@ -14,7 +14,7 @@ type Task = {
 type Coverage = {
   id: string;
   status: string | null;
-  requested_by: string;
+  requester_id: string;
   accepted_by: string | null;
   created_at: string;
   tasks: { title: string | null }[] | null;
@@ -82,8 +82,8 @@ export default function HistoryClient() {
       } else {
         let query = supabase
           .from("coverage_requests")
-          .select("id, status, requested_by, accepted_by, created_at, tasks(title)")
-          .or(`requested_by.eq.${user.id},accepted_by.eq.${user.id}`)
+          .select("id, status, requester_id, accepted_by, created_at, tasks(title)")
+          .or(`requester_id.eq.${user.id},accepted_by.eq.${user.id}`)
           .gte("created_at", start.toISOString())
           .lte("created_at", end.toISOString());
 
@@ -255,7 +255,7 @@ export default function HistoryClient() {
                 {c.tasks?.[0]?.title ?? "Unknown task"}
               </div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                Requested by: {c.requested_by === c.requested_by ? c.requested_by : c.requested_by}
+                Requested by: {c.requester_id === c.requester_id ? c.requester_id : c.requester_id}
               </div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">
                 Accepted by: {c.accepted_by ?? "—"}
@@ -308,7 +308,7 @@ export default function HistoryClient() {
                       await supabase
                         .from("coverage_requests")
                         .delete()
-                        .eq("requested_by", user.id);
+                        .eq("requester_id", user.id);
                     }
                   }
                   setClearing(false);

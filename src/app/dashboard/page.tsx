@@ -27,7 +27,7 @@ type CoverageRequest = {
   id: string;
   task_id: string;
   group_id: string;
-  requested_by: string;
+  requester_id: string;
   status: string | null;
   tasks: { title: string | null; date: string | null } | null;
 };
@@ -79,7 +79,7 @@ export default async function Dashboard() {
   if (groupIds.length > 0) {
     const { data: reqs } = await supabase
       .from("coverage_requests")
-      .select("id, task_id, group_id, requested_by, status, tasks(title, date)")
+      .select("id, task_id, group_id, requester_id, status, tasks(title, date)")
       .in("group_id", groupIds)
       .eq("status", "OPEN");
     coverageRequests = (reqs ?? []) as unknown as CoverageRequest[];

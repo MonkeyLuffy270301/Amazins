@@ -88,10 +88,10 @@ export default function GroupChat({
     const { error: requestError } = await supabase.from("coverage_requests").insert({
       task_id: taskId,
       group_id: groupId,
-      requested_by: user.id,
+      requester_id: user.id,
       status: "OPEN",
-      requester_phone: requesterPhone || null,
-      owner_phone: ownerPhone || null,
+      phone_requester: requesterPhone || null,
+      phone_owner: ownerPhone || null,
       links: links || null,
       image_urls: imageUrls || null,
     });
@@ -206,34 +206,15 @@ export default function GroupChat({
                 type="button"
                 disabled={creatingRequest}
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                onClick={async () => {
+                onClick={() => {
                   setMenuOpen(false);
-                  setCreatingRequest(true);
-                  const supabase = createClient();
-                  const {
-                    data: { user },
-                  } = await supabase.auth.getUser();
-                  if (!user) {
-                    setError("You must be logged in.");
-                    setCreatingRequest(false);
-                    return;
-                  }
-                  const taskId = crypto.randomUUID();
-                  await supabase.from("tasks").insert({
-                    id: taskId,
-                    user_id: user.id,
-                    title: "New Request",
-                    date: null,
-                    status: "pending",
-                  });
                   setRequestTask({
-                    id: taskId,
+                    id: "",
                     title: "New Request",
                     date: null,
                     location: null,
                   });
                   setRequestOpen(true);
-                  setCreatingRequest(false);
                 }}
               >
                 {creatingRequest ? "..." : "Create Request"}
@@ -270,6 +251,7 @@ export default function GroupChat({
             setRequestTask(null);
           }}
           targetGroupId={groupId}
+          createTask
         />
       )}
     </div>

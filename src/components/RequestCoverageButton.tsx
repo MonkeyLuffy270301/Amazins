@@ -55,10 +55,10 @@ export default function RequestCoverageButton({ taskId }: { taskId: string }) {
     const { error } = await supabase.from("coverage_requests").insert({
       task_id: taskId,
       group_id: groups[index].id,
-      requested_by: user.id,
+      requester_id: user.id,
       status: "OPEN",
-      requester_phone: requesterPhone || null,
-      owner_phone: ownerPhone || null,
+      phone_requester: requesterPhone || null,
+      phone_owner: ownerPhone || null,
       links: links || null,
       image_urls: imageUrls || null,
     });

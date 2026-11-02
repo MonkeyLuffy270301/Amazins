@@ -23,11 +23,13 @@ export default function RequestCoverageModal({
   open,
   onClose,
   targetGroupId,
+  createTask = false,
 }: {
   task: Task;
   open: boolean;
   onClose: () => void;
   targetGroupId?: string;
+  createTask?: boolean;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
@@ -128,7 +130,27 @@ export default function RequestCoverageModal({
       return;
     }
 
+    let taskId = task.id;
     try {
+      if (createTask) {
+        const { data: newTask, error: taskError } = await supabase
+          .from("tasks")
+          .insert({
+            user_id: user.id,
+            title: title || "New Request",
+            date: date || null,
+            start_time: pickupTime || null,
+            location: place || null,
+            status: "NEEDS_COVERAGE",
+          })
+          .select()
+          .single();
+        if (taskError || !newTask) {
+          throw new Error(taskError?.message || "Failed to create task.");
+        }
+        taskId = newTask.id;
+      }
+
       let imageUrls: string | null = null;
       const uploadedUrls: string[] = [];
       if (imageFiles && imageFiles.length > 0) {
@@ -158,14 +180,15 @@ export default function RequestCoverageModal({
         if (!dest) continue;
         const groupId = dest.kind === "group" ? dest.id : null;
         const fullPayload = {
-          task_id: task.id,
+          task_id: taskId,
           group_id: groupId,
-          requested_by: user.id,
+          requester_id: user.id,
           status: "OPEN",
-          pickup_place: place || null,
+          place: place || null,
           pickup_time: pickupTime || null,
-          requester_phone: phoneRequester || null,
-          owner_phone: phoneOwner || null,
+          order_reference: null,
+          phone_requester: phoneRequester || null,
+          phone_owner: phoneOwner || null,
           links: links || null,
           image_urls: imageUrls,
         };
@@ -178,12 +201,12 @@ export default function RequestCoverageModal({
           const { error: basicError } = await supabase
             .from("coverage_requests")
             .insert({
-              task_id: task.id,
+              task_id: taskId,
               group_id: groupId,
-              requested_by: user.id,
+              requester_id: user.id,
               status: "OPEN",
-              requester_phone: phoneRequester || null,
-              owner_phone: phoneOwner || null,
+              phone_requester: phoneRequester || null,
+              phone_owner: phoneOwner || null,
               links: links || null,
               image_urls: imageUrls,
             });

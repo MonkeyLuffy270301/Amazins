@@ -133,10 +133,10 @@ export default function TaskRow({ task }: { task: Task }) {
     const { error } = await supabase.from("coverage_requests").insert({
       task_id: task.id,
       group_id: groups[index].id,
-      requested_by: user.id,
+      requester_id: user.id,
       status: "OPEN",
-      requester_phone: requesterPhone || null,
-      owner_phone: ownerPhone || null,
+      phone_requester: requesterPhone || null,
+      phone_owner: ownerPhone || null,
       links: linksInput || null,
       image_urls: imageUrlsInput || null,
     });

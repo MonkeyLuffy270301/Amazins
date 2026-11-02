@@ -163,32 +163,13 @@ export default function DirectChat({
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 onClick={async () => {
                   setMenuOpen(false);
-                  setCreatingRequest(true);
-                  const supabase = createClient();
-                  const {
-                    data: { user },
-                  } = await supabase.auth.getUser();
-                  if (!user) {
-                    setError("You must be logged in.");
-                    setCreatingRequest(false);
-                    return;
-                  }
-                  const taskId = crypto.randomUUID();
-                  await supabase.from("tasks").insert({
-                    id: taskId,
-                    user_id: user.id,
-                    title: "New Request",
-                    date: null,
-                    status: "pending",
-                  });
                   setRequestTask({
-                    id: taskId,
+                    id: "",
                     title: "New Request",
                     date: null,
                     location: null,
                   });
                   setRequestOpen(true);
-                  setCreatingRequest(false);
                 }}
               >
                 {creatingRequest ? "..." : "Create Request"}
@@ -224,6 +205,7 @@ export default function DirectChat({
             setRequestOpen(false);
             setRequestTask(null);
           }}
+          createTask
         />
       )}
     </div>

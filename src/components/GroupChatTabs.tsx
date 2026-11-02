@@ -10,13 +10,14 @@ type Request = {
   task_id: string;
   status: string | null;
   tasks: { title: string | null; date: string | null; start_time: string | null } | null;
-  pickup_place?: string | null;
+  place?: string | null;
   pickup_time?: string | null;
-  requester_phone?: string | null;
-  owner_phone?: string | null;
+  order_reference?: string | null;
+  phone_requester?: string | null;
+  phone_owner?: string | null;
   links?: string | null;
   image_urls?: string | null;
-  requested_by: string;
+  requester_id: string;
   accepted_by?: string | null;
 };
 
@@ -138,12 +139,12 @@ export default function GroupChatTabs({
                   </div>
                   <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                     {r.tasks?.date ? `Date: ${r.tasks.date}` : ""}
-                    {r.pickup_place ? ` · Place: ${r.pickup_place}` : ""}
+                    {r.place ? ` · Place: ${r.place}` : ""}
                     {r.pickup_time ? ` · Time: ${r.pickup_time}` : ""}
                   </div>
                   <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {r.requester_phone ? `Requester Phone: ${r.requester_phone}` : ""}
-                    {r.owner_phone ? ` · Owner Phone: ${r.owner_phone}` : ""}
+                    {r.phone_requester ? `Requester Phone: ${r.phone_requester}` : ""}
+                    {r.phone_owner ? ` · Owner Phone: ${r.phone_owner}` : ""}
                   </div>
                   {r.links && (
                     <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -294,12 +295,13 @@ export default function GroupChatTabs({
                     await supabase.from("coverage_requests").insert({
                       task_id: forwardRequest.task_id,
                       group_id: gid,
-                      requested_by: forwardRequest.requested_by,
+                      requester_id: forwardRequest.requester_id,
                       status: "OPEN",
-                      pickup_place: forwardRequest.pickup_place ?? null,
+                      place: forwardRequest.place ?? null,
                       pickup_time: forwardRequest.pickup_time ?? null,
-                      requester_phone: forwardRequest.requester_phone ?? null,
-                      owner_phone: forwardRequest.owner_phone ?? null,
+                      order_reference: forwardRequest.order_reference ?? null,
+                      phone_requester: forwardRequest.phone_requester ?? null,
+                      phone_owner: forwardRequest.phone_owner ?? null,
                       links: forwardRequest.links ?? null,
                       image_urls: forwardRequest.image_urls ?? null,
                     });
